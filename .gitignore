@@ -1,0 +1,48 @@
+# ===== Secrets — NEVER commit these =====
+.env
+.env.local
+.env.production
+.env.development
+
+# ===== Python =====
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+.venv/
+venv/
+env/
+*.egg
+dist/
+build/
+
+# ===== Node.js =====
+node_modules/
+npm-debug.log*
+
+# ===== IDE =====
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Data (generated at runtime) =====
+chroma_data/
+uploads/
+*.sqlite3
+
+# ===== Build =====
+dist/
+build/
+coverage/
+.nyc_output/

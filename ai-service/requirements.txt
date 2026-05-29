@@ -1,0 +1,52 @@
+# Core Framework
+fastapi==0.115.0
+uvicorn[standard]==0.30.6
+pydantic==2.9.2
+python-dotenv==1.0.1
+
+python-multipart==0.0.9
+
+# LangChain Ecosystem
+langchain==0.3.3
+langchain-core==0.3.10
+langchain-community==0.3.2
+langchain-google-genai==2.0.1
+langchain-openai==0.2.2
+langchain-ollama==0.2.0
+langchain-chroma==0.1.4
+langchain-text-splitters==0.3.0
+langgraph==0.2.34
+
+# Vector Database
+chromadb==0.5.11
+
+# Embeddings & Transformers
+sentence-transformers==3.1.1
+transformers==4.45.2
+torch==2.4.1
+
+# Document Processing
+pypdf==5.0.1
+pytesseract==0.3.13
+Pillow==10.4.0
+
+# ML & Analytics
+scikit-learn==1.5.2
+numpy==1.26.4
+pandas==2.2.3
+
+# HTTP & Async
+httpx==0.27.2
+aiohttp==3.10.8
+aiofiles==24.1.0
+
+# Logging & Observability
+structlog==24.4.0
+rich==13.8.1
+
+# Redis (optional memory backend)
+redis==5.1.1
+
+# Utilities
+tenacity==8.5.0
+orjson==3.10.7
