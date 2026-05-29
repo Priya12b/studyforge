@@ -1,0 +1,49 @@
+.dashboard-shell {
+    display: grid;
+    gap: 24px;
+}
+
+.dashboard-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: 20px;
+}
+
+.dashboard-copy {
+    max-width: 720px;
+    color: var(--muted);
+}
+
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 16px;
+}
+
+.dashboard-chart,
+.dashboard-panel {
+    padding: 22px;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    background: var(--panel-solid);
+    box-shadow: var(--shadow-soft);
+}
+
+.notes-upload-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 14px;
+    align-items: center;
+}
+
+@media (max-width: 720px) {
+    .notes-upload-row {
+        grid-template-columns: 1fr;
+    }
+
+    .notes-upload-row .btn {
+        width: 100%;
+    }
+}

@@ -1,0 +1,20 @@
+.planner-container {
+  display: grid;
+  gap: 22px;
+}
+
+.plan-card {
+  padding: 22px;
+  border-radius: 22px;
+  border: 1px solid var(--border);
+  background: var(--panel-solid);
+  box-shadow: var(--shadow-soft);
+}
+
+.plan-day {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--panel-strong);
+  border: 1px solid var(--border);
+}

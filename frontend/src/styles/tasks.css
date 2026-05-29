@@ -1,0 +1,80 @@
+.tasks-container {
+  display: grid;
+  gap: 22px;
+}
+
+.tasks-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.task-form,
+.planner-form,
+.quiz-form {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: center;
+}
+
+.task-form .input,
+.planner-form .input,
+.quiz-form .input {
+  grid-column: span 1;
+}
+
+.task-form .btn,
+.planner-form .btn,
+.quiz-form .btn {
+  grid-column: 1 / -1;
+}
+
+.task-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 18px;
+}
+
+.task-card {
+  padding: 20px;
+  border-radius: 22px;
+  background: var(--panel-solid);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+}
+
+.task-meta {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 16px;
+  color: var(--muted);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  background: var(--accent-soft);
+  color: var(--accent-deep);
+}
+
+@media (max-width: 900px) {
+
+  .task-form,
+  .planner-form,
+  .quiz-form {
+    grid-template-columns: 1fr;
+  }
+
+  .task-form .input,
+  .planner-form .input,
+  .quiz-form .input {
+    grid-column: auto;
+  }
+}

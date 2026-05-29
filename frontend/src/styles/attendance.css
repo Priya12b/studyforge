@@ -1,0 +1,121 @@
+.attendance-shell {
+    display: grid;
+    gap: 1.5rem;
+}
+
+.attendance-hero {
+    display: grid;
+    gap: 0.45rem;
+}
+
+.attendance-hero h1 {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 3.4rem);
+}
+
+.attendance-grid {
+    display: grid;
+    grid-template-columns: minmax(280px, 1fr) minmax(320px, 1fr);
+    gap: 1.25rem;
+}
+
+.attendance-form,
+.attendance-summary,
+.attendance-history {
+    display: grid;
+    gap: 1rem;
+}
+
+.field-block {
+    display: grid;
+    gap: 0.5rem;
+}
+
+.field-block span {
+    color: var(--muted);
+    font-weight: 600;
+}
+
+.attendance-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+}
+
+.attendance-stats div {
+    padding: 1rem;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+}
+
+.attendance-stats strong {
+    display: block;
+    font-size: 1.4rem;
+}
+
+.attendance-stats span,
+.attendance-today .stat-label {
+    color: var(--muted);
+}
+
+.attendance-today {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: 1rem;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border);
+}
+
+.attendance-list {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.attendance-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.status-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.45rem 0.8rem;
+    border-radius: 999px;
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+.status-present {
+    background: rgba(34, 197, 94, 0.16);
+    color: #22c55e;
+}
+
+.status-late {
+    background: rgba(245, 158, 11, 0.16);
+    color: #f59e0b;
+}
+
+.status-absent {
+    background: rgba(239, 68, 68, 0.16);
+    color: #ef4444;
+}
+
+@media (max-width: 900px) {
+    .attendance-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .attendance-row {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}

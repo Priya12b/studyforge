@@ -1,8 +1,11 @@
-# ===== Secrets — NEVER commit these =====
+# ===== Secrets =====
 .env
 .env.local
 .env.production
 .env.development
+.env.*.local
+*.pem
+*.key
 
 # ===== Python =====
 __pycache__/
@@ -13,18 +16,43 @@ __pycache__/
 venv/
 env/
 *.egg
-dist/
-build/
 
 # ===== Node.js =====
 node_modules/
+**/node_modules/
 npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===== Build =====
+dist/
+build/
+frontend/dist/
+backend/dist/
+coverage/
+.nyc_output/
+
+# ===== Uploads / Runtime Data =====
+uploads/
+uploads/**
+chroma_data/
+*.sqlite3
+
+# ===== Cache =====
+.cache/
+.parcel-cache/
+.vite/
+node_modules/.cache/
 
 # ===== IDE =====
 .vscode/
 .idea/
 *.swp
 *.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
 *~
 
 # ===== OS =====
@@ -33,16 +61,8 @@ Thumbs.db
 desktop.ini
 
 # ===== Logs =====
-*.log
 logs/
+*.log
 
-# ===== Data (generated at runtime) =====
-chroma_data/
-uploads/
-*.sqlite3
-
-# ===== Build =====
-dist/
-build/
-coverage/
-.nyc_output/
+# ===== Temp =====
+*.tmp
