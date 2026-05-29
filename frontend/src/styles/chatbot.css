@@ -1,0 +1,47 @@
+.chatbot-shell {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.chatbot-hero,
+.chatbot-panel {
+    display: grid;
+    gap: 1rem;
+}
+
+.chatbot-hero h1 {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 3.25rem);
+}
+
+.chatbot-input-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.85rem;
+}
+
+.chatbot-thread {
+    display: grid;
+    gap: 0.85rem;
+}
+
+.chat-card {
+    padding: 1rem;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.chat-card p {
+    margin: 0.25rem 0;
+}
+
+@media (max-width: 720px) {
+    .chatbot-input-row {
+        grid-template-columns: 1fr;
+    }
+
+    .chatbot-input-row .btn {
+        width: 100%;
+    }
+}

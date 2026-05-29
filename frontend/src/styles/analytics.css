@@ -1,0 +1,25 @@
+.analytics-shell {
+    display: grid;
+    gap: 22px;
+}
+
+.analytics-chart {
+    padding: 22px;
+    border-radius: 24px;
+    border: 1px solid var(--border);
+    background: var(--panel-solid);
+    box-shadow: var(--shadow-soft);
+}
+
+.analytics-grid {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.analytics-stat {
+    padding: 20px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(124, 58, 237, 0.12), rgba(6, 182, 212, 0.08));
+    border: 1px solid var(--border);
+}
