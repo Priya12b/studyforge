@@ -111,7 +111,7 @@ const Register = () => {
         </button>
 
         <div className="social-auth">
-          <a className="btn-secondary" href="http://localhost:5000/api/auth/google">Sign up with Google</a>
+          <a className="btn-secondary" href={`${import.meta.env.VITE_BACKEND_URL || "http://localhost:5000"}/api/auth/google`}>Sign up with Google</a>
         </div>
 
         <div className="auth-footer">

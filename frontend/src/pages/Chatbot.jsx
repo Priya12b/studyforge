@@ -1,4 +1,5 @@
 import { useState } from "react";
+import toast from "react-hot-toast";
 
 import Layout from "../components/Layout";
 import API from "../services/api";
@@ -8,6 +9,7 @@ const Chatbot = () => {
   const [message, setMessage] = useState("");
   const [chat, setChat] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
 
   const sendMessage = async () => {
     if (!message.trim()) {
@@ -19,7 +21,14 @@ const Chatbot = () => {
     try {
       const res = await API.post("/chatbot", {
         message,
+        provider: localStorage.getItem("activeProvider") || "gemini",
+        model: localStorage.getItem("activeModel") || "google/gemini-2.5-flash",
+        session_id: sessionId,
       });
+
+      if (res.data.session_id) {
+        setSessionId(res.data.session_id);
+      }
 
       setChat((currentChat) => [
         ...currentChat,
@@ -31,9 +40,16 @@ const Chatbot = () => {
 
       setMessage("");
     } catch (error) {
-      console.log(error);
+      console.error("[Chatbot] Send failed:", error.message);
+      toast.error("Failed to send message. Please try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !loading) {
+      sendMessage();
     }
   };
 
@@ -53,6 +69,7 @@ const Chatbot = () => {
             <input
               value={message}
               onChange={(e) => setMessage(e.target.value)}
+              onKeyDown={handleKeyDown}
               className="input"
               placeholder="Type your study question..."
             />

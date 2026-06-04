@@ -38,7 +38,7 @@ class OllamaProvider(LLMProvider):
         self,
         model: Optional[str] = None,
         temperature: float = 0.3,
-        max_tokens: int = 4096,
+        max_tokens: int = 8192,
         streaming: bool = False,
     ) -> BaseChatModel:
         """Create a ChatOllama instance with the specified configuration."""
@@ -82,3 +82,22 @@ class OllamaProvider(LLMProvider):
     @property
     def available_models(self) -> list[str]:
         return self._available_models
+
+    def fallback_to_smaller_model(self) -> None:
+        """Fallback to a smaller model if the default model fails due to memory."""
+        smaller_candidates = ["tinyllama", "phi3", "phi-3", "gemma:2b", "qwen2:1.5b", "qwen", "llama3.2:1b", "llama3.2:3b"]
+        
+        # Check if we have any smaller candidates pulled
+        for candidate in smaller_candidates:
+            for model in self._available_models:
+                if candidate in model.lower():
+                    logger.info("ollama_switching_to_smaller_model", from_model=self.default_model, to_model=model)
+                    self.default_model = model
+                    return
+                    
+        # Fallback to the first available model that is not the current default and not an embedding model
+        for model in self._available_models:
+            if model != self.default_model and "embed" not in model.lower():
+                logger.info("ollama_switching_to_smaller_model_fallback", from_model=self.default_model, to_model=model)
+                self.default_model = model
+                return

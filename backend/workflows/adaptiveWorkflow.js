@@ -41,7 +41,7 @@ const runAdaptiveWorkflow = async (
 
         return aiResponse;
     } catch (error) {
-        console.log(error);
+        console.error("[AdaptiveWorkflow] runAdaptiveWorkflow failed:", error.message || error);
 
         throw error;
     }

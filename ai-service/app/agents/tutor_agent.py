@@ -108,41 +108,58 @@ class TutorAgent(BaseAgent):
     async def generate_quiz(self, input_data: Dict[str, Any], trace: AgentTrace) -> Dict[str, Any]:
         """Generate a quiz on a given subject/topic."""
         trace.agent_name = f"{self.agent_name}_quiz"
-
-        llm = self.get_llm(trace, temperature=0.4, task_type_override=TaskType.QUIZ_GENERATION)
-        chain = QUIZ_GENERATOR_PROMPT | llm
-
-        # Optional: get RAG context for document-based quizzes
-        context = ""
-        if input_data.get("use_notes") and input_data.get("document_ids"):
-            retrieval = await rag_retriever.retrieve(
-                input_data["user_id"],
-                f"Key concepts in {input_data.get('topic', input_data.get('subject', ''))}",
-                input_data.get("document_ids", []),
-            )
-            if retrieval["has_relevant_context"]:
-                context = retrieval["context"]
-
-        input_vars = {
-            "subject": input_data.get("subject", "General"),
-            "topic": input_data.get("topic", "Various topics"),
-            "num_questions": input_data.get("num_questions", 5),
-            "difficulty": input_data.get("difficulty", "mixed"),
-            "context": context or "Generate from general knowledge of the subject.",
-        }
-
-        raw_output = await self.invoke_llm_with_retry(chain, input_vars, trace)
-        quiz = self.parse_json_output(raw_output, QuizResponse, trace)
-
-        trace.finish(success=True)
-
+        
         logger.info(
-            "quiz_generated",
+            "quiz_generation_started",
             subject=input_data.get("subject"),
-            questions=quiz.total_questions,
+            topic=input_data.get("topic"),
+            num_questions=input_data.get("num_questions", 5),
+            difficulty=input_data.get("difficulty", "mixed"),
         )
 
-        return quiz.model_dump()
+        try:
+            llm = self.get_llm(trace, temperature=0.4, task_type_override=TaskType.QUIZ_GENERATION)
+            chain = QUIZ_GENERATOR_PROMPT | llm
+
+            # Optional: get RAG context for document-based quizzes
+            context = ""
+            if input_data.get("use_notes") and input_data.get("document_ids"):
+                retrieval = await rag_retriever.retrieve(
+                    input_data["user_id"],
+                    f"Key concepts in {input_data.get('topic', input_data.get('subject', ''))}",
+                    input_data.get("document_ids", []),
+                )
+                if retrieval["has_relevant_context"]:
+                    context = retrieval["context"]
+
+            input_vars = {
+                "subject": input_data.get("subject", "General"),
+                "topic": input_data.get("topic", "Various topics"),
+                "num_questions": input_data.get("num_questions", 5),
+                "difficulty": input_data.get("difficulty", "mixed"),
+                "context": context or "Generate from general knowledge of the subject.",
+            }
+
+            raw_output = await self.invoke_llm_with_retry(chain, input_vars, trace)
+            quiz = self.parse_json_output(raw_output, QuizResponse, trace)
+
+            trace.finish(success=True)
+
+            logger.info(
+                "quiz_generated",
+                subject=input_data.get("subject"),
+                questions=quiz.total_questions,
+            )
+
+            return quiz.model_dump()
+        except Exception as e:
+            logger.error(
+                "quiz_generation_failed",
+                subject=input_data.get("subject"),
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            raise
 
     async def generate_flashcards(self, input_data: Dict[str, Any], trace: AgentTrace) -> Dict[str, Any]:
         """Generate flashcards for revision."""
@@ -215,7 +232,15 @@ class TutorAgent(BaseAgent):
     def get_llm(self, trace: AgentTrace, task_type_override: TaskType = None, **kwargs):
         """Override to allow task type overrides for sub-capabilities."""
         task = task_type_override or self.task_type
-        return self.router.get_model(task_type=task, trace=trace, **kwargs)
+        pref_provider = kwargs.pop("preferred_provider", None) or trace.metadata.get("preferred_provider")
+        model = kwargs.pop("model", None) or trace.metadata.get("preferred_model")
+        return self.router.get_model(
+            task_type=task,
+            trace=trace,
+            preferred_provider=pref_provider,
+            model=model,
+            **kwargs,
+        )
 
     def _generate_followups(self, message: str, subject: str) -> list:
         """Generate suggested follow-up questions (deterministic, no LLM needed)."""

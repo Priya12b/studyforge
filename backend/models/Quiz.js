@@ -5,6 +5,8 @@ const quizSchema = new mongoose.Schema(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required: true,
+      index: true,
     },
 
     subject: String,
@@ -20,6 +22,10 @@ const quizSchema = new mongoose.Schema(
         correctAnswer: String,
 
         userAnswer: String,
+        
+        explanation: String,
+
+        difficulty: String,
       },
     ],
 

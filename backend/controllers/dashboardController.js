@@ -17,7 +17,7 @@ const getDashboard = async (
       data: dashboardData,
     });
   } catch (error) {
-    console.log(error);
+    console.error("[DashboardController] getDashboard failed:", error.message || error);
 
     res.status(500).json({
       message:

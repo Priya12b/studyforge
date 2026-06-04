@@ -29,19 +29,20 @@ const createToken = (user) => jwt.sign(
     }
 );
 
-const getRedirectUrl = (token, user) => {
+const getRedirectUrl = (token, user, clientOrigin) => {
     const params = new URLSearchParams({
         token,
         user: JSON.stringify(buildUserPayload(user)),
     });
 
-    return `${FRONTEND_URL}/auth/callback?${params.toString()}`;
+    const targetUrl = clientOrigin || FRONTEND_URL;
+    return `${targetUrl}/auth/callback?${params.toString()}`;
 };
 
-const startOAuthFlow = (provider) => {
+const startOAuthFlow = (provider, clientOrigin) => {
     const state = `${provider}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
-    oauthStateCache.set(state, { provider, createdAt: Date.now() });
+    oauthStateCache.set(state, { provider, clientOrigin, createdAt: Date.now() });
 
     return state;
 };
@@ -66,7 +67,7 @@ const findOrCreateOAuthUser = async ({
     let user = null;
 
     if (providerId) {
-        user = await User.findOne({ authProvider, providerId });
+        user = await User.findOne({ providerId });
     }
 
     if (!user && email) {
@@ -74,7 +75,10 @@ const findOrCreateOAuthUser = async ({
     }
 
     if (user) {
-        user.authProvider = authProvider;
+        // Keep 'local' authProvider if the user registered locally first
+        if (user.authProvider !== "local") {
+            user.authProvider = authProvider;
+        }
         user.providerId = providerId || user.providerId || "";
         user.avatar = avatar || user.avatar || "";
 
@@ -227,18 +231,17 @@ const loginUser = async (req, res) => {
             });
         }
 
-        if (user.authProvider === "google") {
-            return res.status(400).json({
-                message: "This account uses Google sign-in. Please continue with Google.",
-            });
-        }
-
         const isMatch = await bcrypt.compare(
             password,
             user.password
         );
 
         if (!isMatch) {
+            if (user.authProvider === "google") {
+                return res.status(400).json({
+                    message: "This account uses Google sign-in. Please continue with Google.",
+                });
+            }
             return res.status(400).json({
                 message: "Invalid credentials",
             });
@@ -261,7 +264,16 @@ const loginUser = async (req, res) => {
 };
 
 const beginGoogleAuth = (req, res) => {
-    const state = startOAuthFlow("google");
+    const referer = req.headers.referer;
+    let clientOrigin = FRONTEND_URL;
+    if (referer) {
+        try {
+            clientOrigin = new URL(referer).origin;
+        } catch (e) {
+            console.error("Failed to parse referer URL:", e);
+        }
+    }
+    const state = startOAuthFlow("google", clientOrigin);
     const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
     authUrl.searchParams.set("client_id", process.env.GOOGLE_CLIENT_ID);
     authUrl.searchParams.set("redirect_uri", process.env.GOOGLE_REDIRECT_URI);
@@ -275,8 +287,14 @@ const beginGoogleAuth = (req, res) => {
 
 
 const googleCallback = async (req, res) => {
+    let clientOrigin = FRONTEND_URL;
     try {
         const { code, state } = req.query;
+        const cached = oauthStateCache.get(state);
+        if (cached && cached.clientOrigin) {
+            clientOrigin = cached.clientOrigin;
+        }
+
         validateOAuthState(state, "google");
 
         const tokenData = await exchangeGoogleCode(code);
@@ -291,13 +309,13 @@ const googleCallback = async (req, res) => {
         });
 
         const token = createToken(user);
-        const redirectUrl = getRedirectUrl(token, user);
+        const redirectUrl = getRedirectUrl(token, user, clientOrigin);
         console.log("Google OAuth - redirecting to:", redirectUrl);
         console.log("Google OAuth - token length:", token ? token.length : 0);
         return res.redirect(redirectUrl);
     } catch (error) {
         console.log(error);
-        return res.redirect(`${FRONTEND_URL}/login?error=google_oauth_failed`);
+        return res.redirect(`${clientOrigin}/login?error=google_oauth_failed`);
     }
 };
 
@@ -314,10 +332,33 @@ const getProfile = async (req, res) => {
     }
 };
 
+const updateProfile = async (req, res) => {
+    try {
+        const { name } = req.body;
+        if (!name || !name.trim()) {
+            return res.status(400).json({ message: "Name is required" });
+        }
+        const user = await User.findByIdAndUpdate(
+            req.user.id,
+            { name: name.trim() },
+            { new: true }
+        ).select("-password");
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.status(200).json({ message: "Profile updated successfully", user });
+    } catch (error) {
+        console.error("[authController] updateProfile failed:", error.message);
+        res.status(500).json({ message: "Server Error" });
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
     getProfile,
+    updateProfile,
     beginGoogleAuth,
     googleCallback,
 };

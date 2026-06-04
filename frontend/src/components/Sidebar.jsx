@@ -1,6 +1,12 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 const Sidebar = () => {
+  const location = useLocation();
+
+  const navLink = (to, label) => (
+    <Link to={to} className={location.pathname === to ? "active" : ""}>{label}</Link>
+  );
+
   return (
     <aside className="sidebar glass">
       <div className="sidebar-top">
@@ -12,16 +18,18 @@ const Sidebar = () => {
       </div>
 
       <nav className="sidebar-nav">
-        <Link to="/dashboard">Dashboard</Link>
-        <Link to="/tasks">Tasks</Link>
-        <Link to="/planner">Planner</Link>
-        <Link to="/quiz">Quiz</Link>
-        <Link to="/analytics">Analytics</Link>
-        <Link to="/attendance">Attendance</Link>
-        <Link to="/notes">Notes</Link>
-        <Link to="/gamification">Gamification</Link>
-        <Link to="/chatbot">Chatbot</Link>
-        <Link to="/profile">Profile</Link>
+        {navLink("/dashboard", "Dashboard")}
+        {navLink("/tasks", "Tasks")}
+        {navLink("/planner", "Planner")}
+        {navLink("/quiz", "Quiz")}
+        {navLink("/flashcards", "Flashcards")}
+        {navLink("/revision", "Revision")}
+        {navLink("/analytics", "Analytics")}
+        {navLink("/attendance", "Attendance")}
+        {navLink("/notes", "Notes")}
+        {navLink("/gamification", "Gamification")}
+        {navLink("/chatbot", "Chatbot")}
+        {navLink("/profile", "Profile")}
       </nav>
     </aside>
   );

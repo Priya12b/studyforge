@@ -11,6 +11,8 @@ import Dashboard from "./pages/Dashboard";
 import Tasks from "./pages/Tasks";
 import Planner from "./pages/Planner";
 import Quiz from "./pages/Quiz";
+import Flashcards from "./pages/Flashcards";
+import RevisionSchedule from "./pages/RevisionSchedule";
 import Analytics from "./pages/Analytics";
 import Attendance from "./pages/Attendance";
 import Profile from "./pages/Profile";
@@ -86,6 +88,24 @@ function App() {
           element={
             <ProtectedRoute>
               <Quiz />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/flashcards"
+          element={
+            <ProtectedRoute>
+              <Flashcards />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/revision"
+          element={
+            <ProtectedRoute>
+              <RevisionSchedule />
             </ProtectedRoute>
           }
         />

@@ -92,6 +92,11 @@ textarea {
     font: inherit;
 }
 
+select option {
+    background-color: var(--panel-solid);
+    color: var(--text-strong);
+}
+
 button {
     border: 0;
     cursor: pointer;
@@ -350,4 +355,40 @@ html.dark .card {
     .page {
         padding: 16px;
     }
+}
+
+/* Spinner */
+.spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border-strong);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Sidebar active route */
+.sidebar-nav a.active {
+    background: var(--accent-soft);
+    color: var(--accent-deep);
+    font-weight: 700;
+    border-color: var(--border-strong);
+}
+
+/* Error state */
+.error-card {
+    padding: 24px;
+    text-align: center;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--danger);
+    background: rgba(239, 68, 68, 0.06);
+}
+
+.error-card p {
+    color: var(--danger);
+    margin-bottom: 14px;
 }

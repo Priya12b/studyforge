@@ -12,6 +12,7 @@ from typing import Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from pydantic import BaseModel, Field
 from typing import List
+import traceback
 
 from app.agents.orchestrator import orchestrator
 from app.schemas.ai_schemas import (
@@ -43,16 +44,50 @@ async def generate_study_plan(request: StudyPlanRequest):
     Generate a personalized AI study plan.
     Multi-agent workflow: WeakTopicAnalyzer → Planner → Validator
     """
-    result = await orchestrator.process_request(
-        request_type="generate_plan",
-        data=request.model_dump(),
+    request_data = request.model_dump()
+    logger.info(
+        "generate_plan_request_received",
         user_id=request.user_id,
+        num_subjects=len(request.subjects),
+        start_date=request.start_date,
+        end_date=request.end_date,
     )
 
-    if not result["success"]:
-        raise HTTPException(status_code=500, detail=result.get("error", "Plan generation failed"))
+    try:
+        result = await orchestrator.process_request(
+            request_type="generate_plan",
+            data=request_data,
+            user_id=request.user_id,
+        )
 
-    return result
+        if not result["success"]:
+            error_msg = result.get("error", "Plan generation failed")
+            logger.error(
+                "generate_plan_failed",
+                error=error_msg,
+                request_type=result.get("request_type"),
+            )
+            raise HTTPException(
+                status_code=500,
+                detail={"error": error_msg, "request_type": "generate_plan"},
+            )
+
+        logger.info(
+            "generate_plan_success",
+            user_id=request.user_id,
+            has_data=bool(result.get("data")),
+        )
+        return result
+
+    except HTTPException:
+        raise  # Re-raise HTTPException as-is
+    except Exception as e:
+        logger.error("generate_plan_unhandled_exception", error=str(e), error_type=type(e).__name__)
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=500,
+            detail={"error": str(e), "error_type": type(e).__name__},
+        )
 
 
 # ============================================================
@@ -86,6 +121,8 @@ class AutoRouteRequest(BaseModel):
     message: str
     session_id: Optional[str] = None
     document_ids: List[str] = []
+    model: Optional[str] = None
+    provider: Optional[str] = None
 
 
 @router.post("/auto")
@@ -135,6 +172,8 @@ class FlashcardRequest(BaseModel):
     topic: Optional[str] = None
     num_cards: int = Field(ge=1, le=30, default=10)
     document_ids: List[str] = []
+    model: Optional[str] = None
+    provider: Optional[str] = None
 
 
 @router.post("/generate-flashcards")
@@ -244,6 +283,8 @@ class SummarizeRequest(BaseModel):
     user_id: str
     content: Optional[str] = None
     document_ids: List[str] = []
+    model: Optional[str] = None
+    provider: Optional[str] = None
 
 
 @router.post("/summarize")
@@ -312,6 +353,8 @@ class RevisionRequest(BaseModel):
     study_history: List[dict] = []
     weak_topics: List[str] = []
     daily_capacity_minutes: int = 120
+    model: Optional[str] = None
+    provider: Optional[str] = None
 
 
 @router.post("/revision-schedule")

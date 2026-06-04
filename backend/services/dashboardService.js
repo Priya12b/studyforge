@@ -84,7 +84,7 @@ const getDashboardData = async (
       },
     };
   } catch (error) {
-    console.log(error);
+    console.error("[DashboardService] getDashboardData failed:", error.message || error);
 
     throw error;
   }

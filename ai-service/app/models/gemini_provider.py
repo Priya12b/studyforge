@@ -27,7 +27,7 @@ class GeminiProvider(LLMProvider):
         self,
         model: Optional[str] = None,
         temperature: float = 0.3,
-        max_tokens: int = 4096,
+        max_tokens: int = 8192,
         streaming: bool = False,
     ) -> BaseChatModel:
         """Create a ChatGoogleGenerativeAI instance."""
@@ -43,7 +43,7 @@ class GeminiProvider(LLMProvider):
     async def health_check(self) -> bool:
         """Verify the Gemini API key is valid by making a lightweight request."""
         if not self.api_key:
-            logger.warning("gemini_no_api_key")
+            logger.warning("Gemini: No API key configured in GEMINI_API_KEY")
             return False
 
         try:
@@ -51,11 +51,14 @@ class GeminiProvider(LLMProvider):
                 response = await client.get(
                     f"https://generativelanguage.googleapis.com/v1beta/models?key={self.api_key}"
                 )
-                ok = response.status_code == 200
-                logger.info("gemini_health_check", available=ok)
-                return ok
+                if response.status_code == 200:
+                    logger.info("Gemini: API key is valid")
+                    return True
+                else:
+                    logger.warning(f"Gemini: Invalid API key (HTTP {response.status_code})")
+                    return False
         except Exception as e:
-            logger.warning("gemini_health_failed", error=str(e))
+            logger.warning(f"Gemini: Health check failed - {str(e)}")
             return False
 
     def get_default_model(self) -> str:

@@ -16,7 +16,7 @@ const runQuizWorkflow = async (
 
     return quiz;
   } catch (error) {
-    console.log(error);
+    console.error("[QuizWorkflow] runQuizWorkflow failed:", error.message || error);
 
     throw error;
   }

@@ -12,6 +12,8 @@ Architecture:
 from dotenv import load_dotenv
 load_dotenv()  # Load .env file for local development (no effect in production)
 
+import os
+
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -70,7 +72,11 @@ app = FastAPI(
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure for production
+    allow_origins=[
+        "http://localhost:5173",
+        "http://localhost:5000",
+        os.environ.get("FRONTEND_URL", "http://localhost:5173"),
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -100,3 +106,5 @@ async def root():
             "validation",
         ],
     }
+
+# Trigger reload comment to force uvicorn to pick up changes

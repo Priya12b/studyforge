@@ -35,6 +35,8 @@ class StudyPlanRequest(BaseModel):
     break_duration_minutes: int = 15
     weak_subjects: List[str] = []
     goals: Optional[str] = None
+    model: Optional[str] = None
+    provider: Optional[str] = None
 
 
 class StudyBlock(BaseModel):
@@ -52,21 +54,21 @@ class StudyBlock(BaseModel):
 class DailySchedule(BaseModel):
     """One day's complete study schedule."""
     date: str
-    blocks: List[StudyBlock]
-    total_study_minutes: int
-    subjects_covered: List[str]
+    blocks: List[StudyBlock] = []
+    total_study_minutes: int = 0
+    subjects_covered: List[str] = []
     daily_goal: str = ""
 
 
 class StudyPlanResponse(BaseModel):
     """Complete AI-generated study plan."""
-    title: str
-    description: str
-    daily_schedules: List[DailySchedule]
+    title: str = "Study Plan"
+    description: str = ""
+    daily_schedules: List[DailySchedule] = []
     revision_dates: List[dict] = []
     recommendations: List[str] = []
     estimated_completion: str = ""
-    confidence_score: float = Field(ge=0, le=1, description="AI confidence in the plan quality")
+    confidence_score: float = Field(ge=0, le=1, default=0.7, description="AI confidence in the plan quality")
 
 
 # ============================================================
@@ -113,6 +115,8 @@ class WeakTopicAnalysisRequest(BaseModel):
     study_history: List[dict] = []
     subjects: List[SubjectInput] = []
     skipped_topics: List[str] = []
+    model: Optional[str] = None
+    provider: Optional[str] = None
 
 
 class WeakTopicAnalysisResponse(BaseModel):
@@ -138,6 +142,8 @@ class ChatRequest(BaseModel):
     subject_context: Optional[str] = None
     use_rag: bool = False
     document_ids: List[str] = []
+    model: Optional[str] = None
+    provider: Optional[str] = None
 
 
 class ChatResponse(BaseModel):
@@ -171,6 +177,8 @@ class QuizGenerationRequest(BaseModel):
     difficulty: str = "mixed"
     use_notes: bool = False
     document_ids: List[str] = []
+    model: Optional[str] = None
+    provider: Optional[str] = None
 
 
 class QuizResponse(BaseModel):
@@ -220,6 +228,8 @@ class DocumentQueryRequest(BaseModel):
     query: str
     document_ids: List[str] = []
     top_k: int = 5
+    model: Optional[str] = None
+    provider: Optional[str] = None
 
 
 class RAGResponse(BaseModel):
@@ -240,6 +250,8 @@ class ProductivityAnalysisRequest(BaseModel):
     study_logs: List[dict] = []
     quiz_scores: List[dict] = []
     days_to_analyze: int = 7
+    model: Optional[str] = None
+    provider: Optional[str] = None
 
 
 class ProductivityAnalysisResponse(BaseModel):

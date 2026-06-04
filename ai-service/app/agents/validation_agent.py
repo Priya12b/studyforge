@@ -151,7 +151,7 @@ class ValidationAgent(BaseAgent):
             llm = self.get_llm(trace, temperature=0)
             chain = VALIDATION_PROMPT | llm
 
-            content_str = json.dumps(content, indent=2)[:4000]  # Limit size
+            content_str = json.dumps(content, indent=2)
 
             raw_output = await self.invoke_llm_with_retry(
                 chain,

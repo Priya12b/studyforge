@@ -13,6 +13,7 @@ This is the ONLY entry point for all AI operations.
 
 import json
 import time
+import traceback
 from typing import Any, Dict, Optional
 
 from langchain_core.messages import AIMessage
@@ -68,6 +69,18 @@ class MasterOrchestrator:
         await self.router.initialize()
         logger.info("orchestrator_initialized", providers=self.router.available_providers)
 
+    def _create_trace(self, agent_name: str, data: dict) -> AgentTrace:
+        trace = AgentTrace(agent_name=agent_name)
+        if isinstance(data, dict):
+            if "model" in data and data["model"]:
+                trace.metadata["preferred_model"] = data["model"]
+                print(f"[ORCHESTRATOR._create_trace] Set preferred_model: {data['model']}")
+            if "provider" in data and data["provider"]:
+                trace.metadata["preferred_provider"] = data["provider"]
+                print(f"[ORCHESTRATOR._create_trace] Set preferred_provider: {data['provider']}")
+        print(f"[ORCHESTRATOR._create_trace] Agent: {agent_name}, metadata: {trace.metadata}")
+        return trace
+
     # ================================================================
     # Primary Entry Point
     # ================================================================
@@ -117,16 +130,23 @@ class MasterOrchestrator:
 
         except Exception as e:
             pipeline.finish()
+            error_str = str(e)
+            
+            # Log with full context for debugging
             logger.error(
                 "request_failed",
                 request_type=request_type,
-                error=str(e),
+                error=error_str,
                 pipeline_id=pipeline.pipeline_id,
+                error_type=type(e).__name__,
+                exc_info=True,
             )
 
+            # Return error with context - don't hide the actual error!
             return {
                 "success": False,
-                "error": str(e),
+                "error": error_str,  # Pass actual error so backend can log it
+                "request_type": request_type,  # Helps identify what failed
                 "trace": {
                     "pipeline_id": pipeline.pipeline_id,
                     "latency_ms": pipeline.total_latency_ms,
@@ -142,7 +162,7 @@ class MasterOrchestrator:
         Classify the user's intent from a natural language message.
         Used for the chat endpoint when the intent isn't explicit.
         """
-        trace = AgentTrace(agent_name="intent_classifier")
+        trace = self._create_trace("intent_classifier", {})
         pipeline.add_trace(trace)
 
         try:
@@ -230,7 +250,7 @@ class MasterOrchestrator:
         # Step 1: Get weak topic analysis if quiz data is available
         weak_topics = []
         if data.get("quiz_scores") or data.get("study_history"):
-            weak_trace = AgentTrace()
+            weak_trace = self._create_trace("weak_analyzer", data)
             pipeline.add_trace(weak_trace)
             try:
                 weak_result = await self.weak_analyzer.execute(data, weak_trace)
@@ -240,12 +260,12 @@ class MasterOrchestrator:
                 logger.warning("weak_analysis_in_plan_failed", error=str(e))
 
         # Step 2: Generate the study plan
-        plan_trace = AgentTrace()
+        plan_trace = self._create_trace("planner", data)
         pipeline.add_trace(plan_trace)
         plan = await self.planner.execute(data, plan_trace)
 
         # Step 3: Validate the plan
-        val_trace = AgentTrace()
+        val_trace = self._create_trace("validation", data)
         pipeline.add_trace(val_trace)
         validation = await self.validator.execute(
             {"output_type": "study_plan", "content": plan},
@@ -264,18 +284,18 @@ class MasterOrchestrator:
 
     async def _handle_chat(self, data: dict, pipeline: PipelineTrace) -> dict:
         """Handle a conversational chat message."""
-        trace = AgentTrace()
+        trace = self._create_trace("tutor", data)
         pipeline.add_trace(trace)
         return await self.tutor.execute(data, trace)
 
     async def _handle_generate_quiz(self, data: dict, pipeline: PipelineTrace) -> dict:
         """Generate a quiz."""
-        trace = AgentTrace()
+        trace = self._create_trace("tutor_quiz", data)
         pipeline.add_trace(trace)
         quiz = await self.tutor.generate_quiz(data, trace)
 
         # Validate quiz
-        val_trace = AgentTrace()
+        val_trace = self._create_trace("validation", data)
         pipeline.add_trace(val_trace)
         validation = await self.validator.execute(
             {"output_type": "quiz", "content": quiz},
@@ -287,7 +307,7 @@ class MasterOrchestrator:
 
     async def _handle_generate_flashcards(self, data: dict, pipeline: PipelineTrace) -> dict:
         """Generate flashcards."""
-        trace = AgentTrace()
+        trace = self._create_trace("tutor_flashcards", data)
         pipeline.add_trace(trace)
         return await self.tutor.generate_flashcards(data, trace)
 
@@ -299,14 +319,14 @@ class MasterOrchestrator:
         3. Generate revision recommendations
         """
         # Step 1: Productivity analysis
-        prod_trace = AgentTrace()
+        prod_trace = self._create_trace("productivity", data)
         pipeline.add_trace(prod_trace)
         productivity = await self.productivity.execute(data, prod_trace)
 
         # Step 2: Weak topic analysis
         weak_result = {}
         if data.get("quiz_scores") or data.get("subjects"):
-            weak_trace = AgentTrace()
+            weak_trace = self._create_trace("weak_analyzer", data)
             pipeline.add_trace(weak_trace)
             try:
                 weak_result = await self.weak_analyzer.execute(data, weak_trace)
@@ -320,7 +340,7 @@ class MasterOrchestrator:
 
     async def _handle_document_query(self, data: dict, pipeline: PipelineTrace) -> dict:
         """RAG-based document query."""
-        trace = AgentTrace()
+        trace = self._create_trace("rag", data)
         pipeline.add_trace(trace)
         return await self.rag.execute(data, trace)
 
@@ -336,18 +356,18 @@ class MasterOrchestrator:
 
     async def _handle_summarize(self, data: dict, pipeline: PipelineTrace) -> dict:
         """Summarize content."""
-        trace = AgentTrace()
+        trace = self._create_trace("tutor_summary", data)
         pipeline.add_trace(trace)
         return await self.tutor.summarize(data, trace)
 
     async def _handle_revision_schedule(self, data: dict, pipeline: PipelineTrace) -> dict:
         """Generate a revision schedule."""
-        trace = AgentTrace()
+        trace = self._create_trace("revision", data)
         pipeline.add_trace(trace)
         schedule = await self.revision.execute(data, trace)
 
         # Validate
-        val_trace = AgentTrace()
+        val_trace = self._create_trace("validation", data)
         pipeline.add_trace(val_trace)
         validation = await self.validator.execute(
             {"output_type": "revision_schedule", "content": schedule},
@@ -359,7 +379,7 @@ class MasterOrchestrator:
 
     async def _handle_weak_analysis(self, data: dict, pipeline: PipelineTrace) -> dict:
         """Run standalone weak topic analysis."""
-        trace = AgentTrace()
+        trace = self._create_trace("weak_analyzer", data)
         pipeline.add_trace(trace)
         return await self.weak_analyzer.execute(data, trace)
 

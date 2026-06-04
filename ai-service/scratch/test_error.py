@@ -20,17 +20,14 @@ data = {
   "preferred_end_time": "21:00",
   "break_duration_minutes": 15,
   "weak_subjects": ["Wireless Sensor Network"],
-  "goals": "string"
+  "goals": "string",
+  "provider": "invalid_provider"  # This should trigger an error in the orchestrator
 }
 
-print("Sending request to generate plan using Ollama locally... This may take a few minutes depending on your hardware.")
-
 try:
-    with httpx.Client(timeout=1000.0) as client:
+    with httpx.Client(timeout=10.0) as client:
         response = client.post("http://127.0.0.1:8000/ai/generate-plan", json=data)
-        if response.status_code == 200:
-            print(json.dumps(response.json(), indent=2))
-        else:
-            print("Error:", response.status_code, response.text)
+        print("Status Code:", response.status_code)
+        print("Response Text:", response.text)
 except Exception as e:
     print("Failed:", e)

@@ -83,7 +83,7 @@ const uploadPDF = async (
     try {
       await awardNotesUpload(req.user.id);
     } catch (rewardError) {
-      console.log(rewardError);
+      console.error("[UploadController] awardNotesUpload failed:", rewardError.message || rewardError);
     }
 
     res.status(200).json({
@@ -95,7 +95,7 @@ const uploadPDF = async (
       data: savedNotes,
     });
   } catch (error) {
-    console.log(error);
+    console.error("[UploadController] uploadPDF failed:", error.message || error);
 
     res.status(500).json({
       message:
@@ -104,6 +104,57 @@ const uploadPDF = async (
   }
 };
 
+const getNotes = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100);
+    const skip = (page - 1) * limit;
+
+    const [notes, total] = await Promise.all([
+      Notes.find({ userId: req.user.id }).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Notes.countDocuments({ userId: req.user.id }),
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: notes,
+      notes,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit)
+    });
+  } catch (error) {
+    console.error("[UploadController] getNotes failed:", error.message || error);
+    res.status(500).json({
+      message: "Failed to fetch notes",
+    });
+  }
+};
+
+const deleteNote = async (req, res) => {
+  try {
+    const note = await Notes.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+    if (!note) {
+      return res.status(404).json({ message: "Note not found" });
+    }
+    // Also delete the file from disk
+    if (note.filePath) {
+      try {
+        fs.unlinkSync(note.filePath);
+      } catch (e) {
+        console.error("[UploadController] Failed to delete file on disk:", e.message);
+      }
+    }
+    res.status(200).json({ success: true, message: "Note deleted" });
+  } catch (error) {
+    console.error("[UploadController] deleteNote failed:", error.message || error);
+    res.status(500).json({ message: "Failed to delete note" });
+  }
+};
+
 module.exports = {
   uploadPDF,
+  getNotes,
+  deleteNote,
 };

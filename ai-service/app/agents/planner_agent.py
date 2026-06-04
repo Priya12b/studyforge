@@ -35,47 +35,92 @@ class PlannerAgent(BaseAgent):
         """Generate a complete study plan."""
         trace.agent_name = self.agent_name
 
-        # Get a complex-reasoning capable model for planning
-        llm = self.get_llm(trace, temperature=0.2)  # Low temp for deterministic schedules
-
-        # Build the chain
-        chain = STUDY_PLANNER_PROMPT | llm
-
-        # Prepare input variables
-        subjects_info = self._format_subjects(input_data.get("subjects", []))
-        weak_subjects = input_data.get("weak_subjects", [])
-
-        input_vars = {
-            "subjects": subjects_info,
-            "available_hours": input_data.get("available_hours_per_day", 4),
-            "start_date": input_data.get("start_date", ""),
-            "end_date": input_data.get("end_date", ""),
-            "start_time": input_data.get("preferred_start_time", "09:00"),
-            "end_time": input_data.get("preferred_end_time", "21:00"),
-            "break_minutes": input_data.get("break_duration_minutes", 15),
-            "weak_subjects": ", ".join(weak_subjects) if weak_subjects else "None specified",
-            "goals": input_data.get("goals", "Prepare thoroughly for exams"),
-        }
-
-        # Invoke with retry
-        raw_output = await self.invoke_llm_with_retry(chain, input_vars, trace)
-
-        # Parse into structured output
-        plan = self.parse_json_output(raw_output, StudyPlanResponse, trace)
-
-        # Post-processing: validate the plan
-        validated_plan = self._validate_plan(plan, input_data)
-
-        trace.finish(success=True)
+        print(f"\n[PLANNER_AGENT] ===== EXECUTING PLANNER =====")
+        print(f"[PLANNER_AGENT] Input data keys: {list(input_data.keys())}")
+        print(f"[PLANNER_AGENT] Num subjects: {len(input_data.get('subjects', []))}")
+        print(f"[PLANNER_AGENT] Available hours: {input_data.get('available_hours_per_day', 4)}")
 
         logger.info(
-            "study_plan_generated",
-            days=len(validated_plan.daily_schedules),
-            subjects=len(input_data.get("subjects", [])),
-            confidence=validated_plan.confidence_score,
+            "study_plan_generation_started",
+            num_subjects=len(input_data.get("subjects", [])),
+            available_hours=input_data.get("available_hours_per_day", 4),
+            start_date=input_data.get("start_date"),
+            end_date=input_data.get("end_date"),
         )
 
-        return validated_plan.model_dump()
+        try:
+            # Get a complex-reasoning capable model for planning
+            # REDUCED from 16384 to 8192 - planner doesn't need 16k tokens
+            print(f"[PLANNER_AGENT] Getting LLM with max_tokens=8192...")
+            llm = self.get_llm(trace, temperature=0.2, max_tokens=8192)
+            print(f"[PLANNER_AGENT] LLM obtained: {type(llm).__name__}")
+
+            # Build the chain
+            print(f"[PLANNER_AGENT] Building prompt chain...")
+            chain = STUDY_PLANNER_PROMPT | llm
+
+            # Prepare input variables
+            subjects_info = self._format_subjects(input_data.get("subjects", []))
+            weak_subjects = input_data.get("weak_subjects", [])
+
+            input_vars = {
+                "subjects": subjects_info,
+                "available_hours": input_data.get("available_hours_per_day", 4),
+                "start_date": input_data.get("start_date", ""),
+                "end_date": input_data.get("end_date", ""),
+                "start_time": input_data.get("preferred_start_time", "09:00"),
+                "end_time": input_data.get("preferred_end_time", "21:00"),
+                "break_minutes": input_data.get("break_duration_minutes", 15),
+                "weak_subjects": ", ".join(weak_subjects) if weak_subjects else "None specified",
+                "goals": input_data.get("goals", "Prepare thoroughly for exams"),
+            }
+
+            print(f"[PLANNER_AGENT] Input variables prepared. Keys: {list(input_vars.keys())}")
+
+            # Invoke with retry
+            print(f"[PLANNER_AGENT] Invoking LLM with retry...")
+            raw_output = await self.invoke_llm_with_retry(chain, input_vars, trace)
+
+            print(f"[PLANNER_AGENT] Raw LLM output received, length: {len(raw_output)}")
+
+            # Parse into structured output
+            print(f"[PLANNER_AGENT] Parsing JSON output...")
+            plan = self.parse_json_output(raw_output, StudyPlanResponse, trace)
+
+            print(f"[PLANNER_AGENT] Plan parsed successfully!")
+            print(f"[PLANNER_AGENT] Plan has {len(plan.daily_schedules)} daily schedules")
+
+            # Post-processing: validate the plan
+            print(f"[PLANNER_AGENT] Validating plan...")
+            validated_plan = self._validate_plan(plan, input_data)
+
+            trace.finish(success=True)
+
+            logger.info(
+                "study_plan_generated",
+                days=len(validated_plan.daily_schedules),
+                subjects=len(input_data.get("subjects", [])),
+                confidence=validated_plan.confidence_score,
+            )
+
+            print(f"[PLANNER_AGENT] ===== PLANNER COMPLETE =====\n")
+            return validated_plan.model_dump()
+        except Exception as e:
+            print(f"\n[PLANNER_AGENT] ===== PLANNER FAILED =====")
+            print(f"[PLANNER_AGENT] Error type: {type(e).__name__}")
+            print(f"[PLANNER_AGENT] Error message: {str(e)}")
+            import traceback
+            print(f"[PLANNER_AGENT] Full traceback:")
+            traceback.print_exc()
+            print(f"[PLANNER_AGENT] ===== END TRACEBACK =====\n")
+
+            logger.error(
+                "study_plan_generation_failed",
+                num_subjects=len(input_data.get("subjects", [])),
+                error=str(e),
+                error_type=type(e).__name__,
+            )
+            raise
 
     def _format_subjects(self, subjects: list) -> str:
         """Format subjects list into a structured string for the prompt."""

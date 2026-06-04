@@ -34,7 +34,7 @@ const generateQuizController = async (
 
     res.status(200).json(savedQuiz);
   } catch (error) {
-    console.log(error);
+    console.error("[quizController] generateQuizController failed:", error.message || error);
 
     res.status(500).json({
       message: "Quiz generation failed",
@@ -56,6 +56,10 @@ const submitQuiz = async (req, res) => {
       });
     }
 
+    if (!Array.isArray(req.body.answers)) {
+      return res.status(400).json({ message: "Answers must be an array" });
+    }
+
     let score = 0;
 
     let weakTopics = [];
@@ -71,10 +75,13 @@ const submitQuiz = async (req, res) => {
         ) {
           score++;
         } else {
-          weakTopics.push(quiz.topic);
+          weakTopics.push(quiz.questions[index]?.topic || quiz.topic);
         }
       }
     );
+
+    // Deduplicate weak topics
+    weakTopics = [...new Set(weakTopics)];
 
     quiz.score = score;
     quiz.weakTopics = weakTopics;
@@ -98,7 +105,7 @@ const submitQuiz = async (req, res) => {
         quiz.questions.length
       );
     } catch (rewardError) {
-      console.log(rewardError);
+      console.error("[quizController] submitQuiz reward failed:", rewardError.message || rewardError);
     }
 
     res.status(200).json({
@@ -108,7 +115,7 @@ const submitQuiz = async (req, res) => {
       gamification,
     });
   } catch (error) {
-    console.log(error);
+    console.error("[quizController] submitQuiz failed:", error.message || error);
 
     res.status(500).json({
       message: "Quiz submission failed",
@@ -116,7 +123,35 @@ const submitQuiz = async (req, res) => {
   }
 };
 
+const deleteQuiz = async (req, res) => {
+  try {
+    const quiz = await Quiz.findOneAndDelete({ _id: req.params.id, userId: req.user.id });
+    if (!quiz) {
+      return res.status(404).json({ message: "Quiz not found" });
+    }
+    res.status(200).json({ success: true, message: "Quiz deleted" });
+  } catch (error) {
+    console.error("[quizController] deleteQuiz failed:", error.message || error);
+    res.status(500).json({ message: "Failed to delete quiz" });
+  }
+};
+
+const getQuizHistory = async (req, res) => {
+  try {
+    const quizzes = await Quiz.find({ userId: req.user.id })
+      .sort({ createdAt: -1 })
+      .limit(20)
+      .select("subject topic score questions createdAt");
+    res.status(200).json({ success: true, data: quizzes });
+  } catch (error) {
+    console.error("[quizController] getQuizHistory failed:", error.message || error);
+    res.status(500).json({ message: "Failed to fetch quiz history" });
+  }
+};
+
 module.exports = {
   generateQuizController,
   submitQuiz,
+  deleteQuiz,
+  getQuizHistory,
 };

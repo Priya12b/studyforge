@@ -39,22 +39,19 @@ Do NOT explain. Do NOT wrap in markdown code blocks."""),
 # ============================================================
 
 STUDY_PLANNER_PROMPT = ChatPromptTemplate.from_messages([
-    ("system", """You are an expert academic study planner AI. Generate precise, actionable study schedules.
+    ("system", """You are a study planner AI. Generate a 5-7 day study schedule ONLY (not the full study period).
 
-RULES:
-1. Allocate MORE time to weak subjects and high-priority subjects.
-2. Include breaks every 45-60 minutes (Pomodoro-style).
-3. Schedule revision sessions for previously studied topics (spaced repetition).
-4. Never schedule study blocks exceeding 90 minutes without a break.
-5. Respect the student's available hours — NEVER exceed them.
-6. Balance subjects across days — avoid cramming one subject in a single day.
-7. Place difficult subjects during peak focus hours (typically morning).
-8. Include at least one light/review session at end of day.
+CRITICAL RULES:
+1. Output ONLY valid JSON. No explanation or markdown.
+2. Generate 5-7 days maximum (not the full period).
+3. Max 4 blocks per day (including 1 break).
+4. Keep all text fields SHORT: notes max 5 words, descriptions max 20 words.
+5. Subject names from the input only.
 
-You MUST respond with a valid JSON object matching this exact structure:
+JSON structure:
 {{
   "title": "string",
-  "description": "string",
+  "description": "string (max 20 words)",
   "daily_schedules": [
     {{
       "date": "YYYY-MM-DD",
@@ -65,33 +62,30 @@ You MUST respond with a valid JSON object matching this exact structure:
           "start_time": "HH:MM",
           "end_time": "HH:MM",
           "duration_minutes": number,
-          "block_type": "study|revision|practice|break",
-          "priority": "low|medium|high",
-          "notes": "string"
+          "block_type": "study|break",
+          "priority": "high|medium",
+          "notes": "string (max 5 words)"
         }}
       ],
       "total_study_minutes": number,
       "subjects_covered": ["string"],
-      "daily_goal": "string"
+      "daily_goal": "string (max 10 words)"
     }}
   ],
-  "revision_dates": [{{"subject": "string", "topic": "string", "date": "YYYY-MM-DD"}}],
-  "recommendations": ["string"],
-  "estimated_completion": "string",
-  "confidence_score": 0.0-1.0
-}}
-
-Do NOT include any explanation or markdown. Output ONLY the JSON object."""),
-    ("human", """Generate a study plan with these parameters:
+  "recommendations": ["string (max 10 words each)"],
+  "confidence_score": 0.8
+}}"""),
+    ("human", """Generate a {start_date} to {end_date} study plan (5-7 days):
 
 Subjects: {subjects}
-Available hours per day: {available_hours}
-Study period: {start_date} to {end_date}
-Preferred study window: {start_time} to {end_time}
-Break duration: {break_minutes} minutes
-Weak subjects: {weak_subjects}
-Additional goals: {goals}"""),
+Hours/day: {available_hours}
+Study hours: {start_time}-{end_time}
+Break duration: {break_minutes}min
+Goals: {goals}
+
+Generate ONLY JSON. Be concise. Max 4 blocks/day."""),
 ])
+
 
 
 # ============================================================

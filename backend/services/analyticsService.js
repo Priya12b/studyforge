@@ -43,7 +43,7 @@ const updateUserAnalytics = async (
 
     return analytics;
   } catch (error) {
-    console.log(error);
+    console.error("[AnalyticsService] updateUserAnalytics failed:", error.message || error);
 
     throw error;
   }

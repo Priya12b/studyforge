@@ -15,7 +15,7 @@ const runPlannerWorkflow = async (user, data) => {
 
     return aiResponse;
   } catch (error) {
-    console.log(error.message);
+    console.error("[PlannerWorkflow] runPlannerWorkflow failed:", error.message || error);
 
     throw error;
   }

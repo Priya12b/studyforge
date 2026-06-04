@@ -5,23 +5,31 @@ import {
 import { Link } from "react-router-dom";
 
 import Layout from "../components/Layout";
+import LoadingSpinner from "../components/LoadingSpinner";
 import API from "../services/api";
 import "../styles/dashboard.css";
 
 const Dashboard = () => {
   const [data, setData] =
     useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchDashboard = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await API.get("/dashboard");
+      setData(res.data.data);
+    } catch (error) {
+      console.error("[Dashboard] Failed to load:", error.message);
+      setError("Failed to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDashboard = async () => {
-      try {
-        const res = await API.get("/dashboard");
-        setData(res.data.data);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
     fetchDashboard();
   }, []);
 
@@ -63,6 +71,12 @@ const Dashboard = () => {
             <p className="muted">Summarize PDFs, generate quizzes and build plans.</p>
           </Link>
 
+          <Link to="/flashcards" className="card">
+            <div className="stat-label">Flashcards</div>
+            <h3>Study with flashcards</h3>
+            <p className="muted">Generate AI-powered flashcards for quick revision.</p>
+          </Link>
+
           <Link to="/attendance" className="card">
             <div className="stat-label">Attendance</div>
             <h3>Track daily check-ins</h3>
@@ -81,6 +95,15 @@ const Dashboard = () => {
             <p className="muted">Get quick AI-guided study replies from your main app.</p>
           </Link>
         </div>
+
+        {loading && <LoadingSpinner message="Loading dashboard data..." />}
+
+        {error && (
+          <div className="error-card">
+            <p>{error}</p>
+            <button className="btn-secondary" onClick={fetchDashboard}>Retry</button>
+          </div>
+        )}
 
         {data && (
           <section className="dashboard-stats">

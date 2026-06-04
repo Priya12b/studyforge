@@ -28,6 +28,7 @@ class ModelProvider(str, Enum):
     OLLAMA = "ollama"
     GEMINI = "gemini"
     OPENAI = "openai"
+    OPENROUTER = "openrouter"
 
 
 class Settings:
@@ -46,6 +47,9 @@ class Settings:
 
     # OpenAI (Optional - paid: https://platform.openai.com/api-keys)
     openai_api_key: Optional[str] = os.getenv("OPENAI_API_KEY")
+
+    # OpenRouter (Get key: https://openrouter.ai/keys)
+    openrouter_api_key: Optional[str] = os.getenv("OPEN_ROUTER_KEY") or os.getenv("OPENROUTER_API_KEY")
 
     # Ollama (Local - just run 'ollama serve' and pull models)
     ollama_base_url: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
@@ -67,7 +71,7 @@ class Settings:
     memory_backend: str = os.getenv("MEMORY_BACKEND", "local")  # "local" (in-memory) or "redis"
 
     # --- Rate Limits & Timeouts ---
-    max_tokens_per_request: int = int(os.getenv("MAX_TOKENS_PER_REQUEST", "4096"))
+    max_tokens_per_request: int = int(os.getenv("MAX_TOKENS_PER_REQUEST", "8192"))
     model_timeout_seconds: int = int(os.getenv("MODEL_TIMEOUT_SECONDS", "60"))
     max_retries: int = int(os.getenv("MAX_RETRIES", "3"))
 
@@ -88,6 +92,10 @@ class Settings:
     @property
     def has_openai(self) -> bool:
         return bool(self.openai_api_key)
+
+    @property
+    def has_openrouter(self) -> bool:
+        return bool(self.openrouter_api_key)
 
 
 # Singleton settings instance
