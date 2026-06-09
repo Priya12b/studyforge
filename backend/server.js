@@ -48,6 +48,7 @@ const attendanceRoutes = require("./routes/attendanceRoutes");
 const chatbotRoutes = require("./routes/chatbotRoutes");
 const flashcardRoutes = require("./routes/flashcardRoutes");
 const revisionRoutes = require("./routes/revisionRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/planner", plannerRoutes);
@@ -62,12 +63,33 @@ app.use("/api/attendance", attendanceRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/flashcards", flashcardRoutes);
 app.use("/api/revision", revisionRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/uploads", express.static("uploads"));
 
-app.get("/", (req, res) => {
-    res.send("Backend Running");
+const protect = require("./middleware/authMiddleware");
+const requireRole = require("./middleware/roleMiddleware");
+const adminRoutes = require("./routes/adminRoutes");
+app.use("/api/admin", protect, requireRole("admin"), adminRoutes);
+
+const http = require("http");
+const { Server } = require("socket.io");
+const setupStudyRoomSocket = require("./sockets/studyRoomSocket");
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: [process.env.FRONTEND_URL || "http://localhost:5173"],
+    credentials: true,
+  },
 });
 
-app.listen(process.env.PORT, () => {
-    console.log(`Server running on port ${process.env.PORT}`);
-});
+setupStudyRoomSocket(io);
+
+const { checkUpcomingTasksAndNotify } = require("./services/notificationService");
+// Run once on startup after 10s delay, then hourly
+setTimeout(checkUpcomingTasksAndNotify, 10000);
+setInterval(checkUpcomingTasksAndNotify, 60 * 60 * 1000);
+
+server.listen(process.env.PORT || 5000, () => {
+    console.log(`Server running on port ${process.env.PORT || 5000}`);
+});

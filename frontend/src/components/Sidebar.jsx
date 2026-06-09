@@ -1,7 +1,10 @@
+import { useContext } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 
 const Sidebar = () => {
   const location = useLocation();
+  const { user } = useContext(AuthContext);
 
   const navLink = (to, label) => (
     <Link to={to} className={location.pathname === to ? "active" : ""}>{label}</Link>
@@ -29,7 +32,9 @@ const Sidebar = () => {
         {navLink("/notes", "Notes")}
         {navLink("/gamification", "Gamification")}
         {navLink("/chatbot", "Chatbot")}
+        {navLink("/rooms", "Study Rooms")}
         {navLink("/profile", "Profile")}
+        {user?.role === "admin" && navLink("/admin", "Admin Dashboard")}
       </nav>
     </aside>
   );

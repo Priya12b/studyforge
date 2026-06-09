@@ -366,6 +366,78 @@ const analyzePerformance = async (data) => {
   }
 };
 
+const extractTextFromDoc = async (fileBuffer, filename, mimetype) => {
+  try {
+    const FormData = require("form-data");
+    const form = new FormData();
+    form.append("file", fileBuffer, {
+      filename: filename,
+      contentType: mimetype,
+    });
+
+    console.log(`[OCR/Text Extraction] Sending to ${AI_BASE}/ai/extract-text`);
+    const response = await aiClient.post("/ai/extract-text", form, {
+      headers: {
+        ...form.getHeaders(),
+      },
+    });
+
+    const aiData = response.data;
+    if (!aiData.success) {
+      throw new Error(aiData.error || "Text extraction failed");
+    }
+
+    return aiData.text;
+  } catch (error) {
+    console.error("[OCR/Text Extraction] Error:", error.message);
+    throw new Error("Text extraction failed: " + error.message);
+  }
+};
+
+const getAIStatus = async () => {
+  try {
+    const response = await aiClient.get("/system/status", { timeout: 5000 });
+    return response.data;
+  } catch (error) {
+    console.error("[AI Status] Failed to fetch system status:", error.message);
+    return {
+      status: "offline",
+      error: error.message
+    };
+  }
+};
+
+const uploadNoteToAI = async (fileBuffer, filename, mimetype, userId, subject = "", title = "") => {
+  try {
+    const FormData = require("form-data");
+    const form = new FormData();
+    form.append("file", fileBuffer, {
+      filename: filename,
+      contentType: mimetype,
+    });
+    form.append("user_id", userId);
+    form.append("subject", subject);
+    form.append("title", title || filename);
+
+    console.log(`[OCR/RAG Upload] Sending file to ${AI_BASE}/ai/upload-note`);
+    const response = await aiClient.post("/ai/upload-note", form, {
+      headers: {
+        ...form.getHeaders(),
+      },
+    });
+
+    const aiData = response.data;
+    if (!aiData.success) {
+      throw new Error(aiData.error || "RAG upload note failed");
+    }
+
+    return aiData.data;
+  } catch (error) {
+    console.error("[OCR/RAG Upload] Error:", error.message);
+    throw new Error("RAG upload note failed: " + error.message);
+  }
+};
+
 module.exports = {
   generateStudyPlan,
   generateQuiz,
@@ -374,4 +446,7 @@ module.exports = {
   generateFlashcards,
   generateRevisionSchedule,
   analyzePerformance,
+  extractTextFromDoc,
+  getAIStatus,
+  uploadNoteToAI,
 };

@@ -5,6 +5,13 @@ import Layout from "../components/Layout";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { AuthContext } from "../context/AuthContext";
 import API from "../services/api";
+import {
+  isPushSupported,
+  getNotificationState,
+  subscribeToNotifications,
+  unsubscribeFromNotifications,
+  sendTestPushNotification,
+} from "../services/notificationService";
 import "../styles/dashboard.css";
 
 const Profile = () => {
@@ -14,6 +21,57 @@ const Profile = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editName, setEditName] = useState("");
+
+  // Push Notifications State
+  const [pushSupported, setPushSupported] = useState(false);
+  const [notificationsSubscribed, setNotificationsSubscribed] = useState(false);
+  const [pushLoading, setPushLoading] = useState(false);
+
+  useEffect(() => {
+    const checkPush = async () => {
+      try {
+        const state = await getNotificationState();
+        setPushSupported(state.supported);
+        setNotificationsSubscribed(state.subscribed);
+      } catch (e) {
+        console.error("Check push failed", e);
+      }
+    };
+    checkPush();
+  }, []);
+
+  const handleToggleNotifications = async () => {
+    try {
+      setPushLoading(true);
+      if (notificationsSubscribed) {
+        await unsubscribeFromNotifications();
+        setNotificationsSubscribed(false);
+        toast.success("Push notifications disabled");
+      } else {
+        await subscribeToNotifications();
+        setNotificationsSubscribed(true);
+        toast.success("Push notifications enabled!");
+      }
+    } catch (error) {
+      console.error("Failed to update notification subscription:", error);
+      toast.error(error.message || "Failed to set up notifications");
+    } finally {
+      setPushLoading(false);
+    }
+  };
+
+  const handleSendTestNotification = async () => {
+    try {
+      setPushLoading(true);
+      await sendTestPushNotification();
+      toast.success("Test notification sent!");
+    } catch (error) {
+      console.error("Failed to send test push notification:", error);
+      toast.error(error.response?.data?.message || "Failed to send test alert");
+    } finally {
+      setPushLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -127,6 +185,38 @@ const Profile = () => {
                   </div>
                 )}
               </div>
+            </div>
+
+            <div className="dashboard-panel" style={{ marginTop: 20 }}>
+              <h2 style={{ marginBottom: 6 }}>Notification Settings</h2>
+              <p className="muted" style={{ marginBottom: 16 }}>
+                Receive push notifications for tasks due, adaptive revision alerts, and study rooms updates.
+              </p>
+              {pushSupported ? (
+                <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                  <button
+                    className={notificationsSubscribed ? "btn-secondary" : "btn"}
+                    onClick={handleToggleNotifications}
+                    disabled={pushLoading}
+                    style={{ minWidth: 200 }}
+                  >
+                    {pushLoading ? "Processing..." : notificationsSubscribed ? "Disable Notifications" : "Enable Push Notifications"}
+                  </button>
+                  {notificationsSubscribed && (
+                    <button
+                      className="btn"
+                      onClick={handleSendTestNotification}
+                      disabled={pushLoading}
+                    >
+                      Send Test Alert
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <p style={{ color: "var(--border-color)", fontSize: "0.95rem" }}>
+                  Push notifications are not supported or are blocked in this browser.
+                </p>
+              )}
             </div>
 
             {gamification && (

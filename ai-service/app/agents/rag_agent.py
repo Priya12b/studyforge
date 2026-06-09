@@ -83,6 +83,7 @@ class RAGKnowledgeAgent(BaseAgent):
             "chunks_stored": chunks_stored,
             "file_type": processed.file_type,
             "text_preview": processed.extracted_text[:500],
+            "extracted_text": processed.extracted_text,
         }
 
     async def execute(self, input_data: Dict[str, Any], trace: AgentTrace) -> Dict[str, Any]:

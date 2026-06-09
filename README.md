@@ -174,3 +174,34 @@ If you or a colleague want to extend the features further, here is where things 
 - **Strict Rate Limiting**: Protection against brute-forcing authentication requests (`/api/auth` limited to 15 per 15 minutes) and API abuse (100 requests per 15 minutes globally).
 - **Index Support**: Pre-compiled database indexes on the `userId` field across models for fast query lookups.
 - **Dynamic Fallbacks**: The Python router dynamically falls back to alternate LLMs/providers if primary engines experience outages or rate limits.
+
+---
+
+## ✨ Features Implemented in the Latest Version
+
+### ⏱️ Customizable Pomodoro Timer & Study Rooms
+- **Real-Time Sockets**: Sockets-based study rooms enable cooperative user sessions.
+- **Customizable Intervals**: Room hosts can dynamically configure study block lengths and break periods, synchronizing countdown states instantly for all participants.
+
+### ☁️ Production-Ready Cloud Media Storage
+- **Cloudinary Integration**: Upgraded the upload pipeline to store documents and notes on Cloudinary.
+- **Local Fallbacks**: Multer-based local filesystem backup keeps file uploads active if Cloudinary is unavailable.
+
+### 🛡️ Role-Based Route Guards & Seeding
+- **Admin Auto-Seeding**: Automatic creation of the main administrator account (`admin@studyforge.com` / `admin`) on backend initialization.
+- **Access Middleware**: Role guards prevent unauthorized access to sensitive endpoints. Frontend `AdminRoute.jsx` restricts navigation for student accounts.
+
+### 📊 Administrative Diagnostics Dashboard
+- **Diagnostic Panel**: Real-time tracking of server environment status, Node.js server uptime, active AI service status, and healthy/online LLM providers.
+- **Usage Metrics**: Beautiful counters showing registered user count, quizzes, and note uploads.
+- **Prompt Configurator**: Web interface to customize base prompt templates for the study planner, AI tutor, and quiz generator agents.
+
+### 🎙️ Voice Assistant Chatbot
+- **Speech-to-Text**: Dictation of study questions using `webkitSpeechRecognition`.
+- **Text-to-Speech**: Speech synthesis (`window.speechSynthesis`) to read chatbot responses aloud.
+- **Markdown Stripping**: Automatic cleanup of formatting tags to ensure clear and natural speech output.
+
+### 📄 Extended OCR & RAG Pipeline
+- **Image Extraction**: Supports PNG, JPG, and JPEG file uploads, routing them to the FastAPI `/ai/upload-note` RAG ingest vector store.
+- **AI Synthesis**: Automatically processes OCR extracted text to generate comprehensive study notes, flashcards, plans, and quizzes.
+

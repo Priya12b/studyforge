@@ -41,7 +41,7 @@ const NotesUpload = () => {
 
     const handleUpload = async () => {
         if (!file) {
-            toast.error("Please select a PDF to upload");
+            toast.error("Please select a PDF or an image to upload");
             return;
         }
 
@@ -63,7 +63,7 @@ const NotesUpload = () => {
 
             if (res.data.success) {
                 setResult(res.data.data);
-                toast.success("PDF uploaded and AI processed successfully!");
+                toast.success("Document uploaded and AI processed successfully!");
                 setFile(null);
                 fetchNotes(1);
             }
@@ -99,10 +99,10 @@ const NotesUpload = () => {
             <div className="dashboard-shell">
                 <section className="dashboard-hero">
                     <div>
-                        <span className="eyebrow">PDF Notes Intelligence</span>
-                        <h1>AI Notes upload & summary</h1>
+                        <span className="eyebrow">Notes Intelligence (PDF & Images)</span>
+                        <h1>AI Notes Upload & OCR</h1>
                         <p className="dashboard-copy">
-                            Upload a PDF (max 10MB) and generate an AI summary, quiz and study plan from your notes.
+                            Upload a PDF or an image (max 10MB) and generate an AI summary, quiz and study plan from your notes.
                         </p>
                     </div>
                 </section>
@@ -112,14 +112,14 @@ const NotesUpload = () => {
                         <div className="notes-upload-row" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
                             <input
                                 type="file"
-                                accept=".pdf"
+                                accept=".pdf,.png,.jpg,.jpeg"
                                 className="input"
                                 onChange={(e) => setFile(e.target.files[0] || null)}
                                 style={{ flex: 1, minWidth: 200 }}
                             />
 
                             <button onClick={handleUpload} disabled={uploading} className="btn">
-                                {uploading ? `Uploading ${progress}%` : "Upload PDF"}
+                                {uploading ? `Uploading ${progress}%` : "Upload Document"}
                             </button>
                         </div>
 

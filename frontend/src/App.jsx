@@ -20,9 +20,13 @@ import NotesUpload from "./pages/NotesUpload";
 import Gamification from "./pages/Gamification";
 import Chatbot from "./pages/Chatbot";
 import OAuthCallback from "./pages/OAuthCallback";
+import StudyRooms from "./pages/StudyRooms";
+import LiveRoom from "./pages/LiveRoom";
 
 import { AuthContext } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import AdminRoute from "./components/AdminRoute";
+import Admin from "./pages/Admin";
 import { useContext } from "react";
 
 function App() {
@@ -163,6 +167,35 @@ function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+          path="/rooms"
+          element={
+            <ProtectedRoute>
+              <StudyRooms />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/rooms/:roomId"
+          element={
+            <ProtectedRoute>
+              <LiveRoom />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <Admin />
+            </AdminRoute>
+          }
+        />
+
+
 
         <Route
           path="*"

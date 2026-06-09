@@ -24,6 +24,7 @@ from app.schemas.ai_schemas import (
     ProductivityAnalysisRequest,
 )
 from app.utils.logging import get_logger
+from app.rag.document_processor import document_processor
 
 logger = get_logger("ai_router")
 
@@ -250,6 +251,53 @@ async def upload_note(
         if os.path.exists(file_path):
             os.remove(file_path)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/extract-text")
+async def extract_text(file: UploadFile = File(...)):
+    """
+    Extract raw text from PDF or Image using OCR.
+    """
+    allowed_types = {
+        "application/pdf", "text/plain", "text/markdown",
+        "image/png", "image/jpeg", "image/jpg", "image/tiff",
+    }
+
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type: {file.content_type}. Allowed: PDF, TXT, PNG, JPG"
+        )
+
+    document_id = str(uuid.uuid4())[:12]
+    file_ext = os.path.splitext(file.filename or "doc.pdf")[1]
+    file_path = os.path.join(UPLOAD_DIR, f"temp_{document_id}{file_ext}")
+
+    try:
+        with open(file_path, "wb") as f:
+            content = await file.read()
+            f.write(content)
+
+        processed = await document_processor.process_file(
+            file_path=file_path,
+            document_id=document_id,
+        )
+
+        return {
+            "success": True,
+            "text": processed.extracted_text,
+            "title": processed.title,
+            "file_type": processed.file_type,
+        }
+    except Exception as e:
+        logger.error(f"extract_text failed: {str(e)}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if os.path.exists(file_path):
+            try:
+                os.remove(file_path)
+            except Exception:
+                pass
 
 
 # ============================================================
