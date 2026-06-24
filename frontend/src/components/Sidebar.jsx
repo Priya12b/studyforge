@@ -28,6 +28,8 @@ const Sidebar = () => {
         {navLink("/flashcards", "Flashcards")}
         {navLink("/revision", "Revision")}
         {navLink("/analytics", "Analytics")}
+        {navLink("/coach", "AI Study Coach")}
+        {navLink("/study-buddy", "Study Buddy")}
         {navLink("/attendance", "Attendance")}
         {navLink("/notes", "Notes")}
         {navLink("/gamification", "Gamification")}

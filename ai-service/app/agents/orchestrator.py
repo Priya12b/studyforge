@@ -25,6 +25,7 @@ from app.agents.tutor_agent import TutorAgent
 from app.agents.rag_agent import RAGKnowledgeAgent
 from app.agents.productivity_agent import ProductivityAgent
 from app.agents.validation_agent import ValidationAgent
+from app.agents.study_coach_agent import StudyCoachAgent
 from app.models.router import ModelRouter, TaskType, router as model_router
 from app.prompts.templates import INTENT_CLASSIFIER_PROMPT
 from app.schemas.ai_schemas import IntentType, IntentClassification
@@ -63,6 +64,7 @@ class MasterOrchestrator:
         self.rag = RAGKnowledgeAgent(self.router)
         self.productivity = ProductivityAgent(self.router)
         self.validator = ValidationAgent(self.router)
+        self.study_coach = StudyCoachAgent(self.router)
 
     async def initialize(self) -> None:
         """Initialize the model router and verify provider health."""
@@ -227,6 +229,7 @@ class MasterOrchestrator:
             "summarize": self._handle_summarize,
             "revision_schedule": self._handle_revision_schedule,
             "weak_analysis": self._handle_weak_analysis,
+            "study_coach": self._handle_study_coach,
             "auto": self._handle_auto_route,  # Auto-classify + route
         }
 
@@ -382,6 +385,27 @@ class MasterOrchestrator:
         trace = self._create_trace("weak_analyzer", data)
         pipeline.add_trace(trace)
         return await self.weak_analyzer.execute(data, trace)
+
+    async def _handle_study_coach(self, data: dict, pipeline: PipelineTrace) -> dict:
+        """
+        Generate study coach advice:
+        1. Run StudyCoachAgent
+        2. Validate the coaching advice
+        """
+        coach_trace = self._create_trace("study_coach", data)
+        pipeline.add_trace(coach_trace)
+        advice = await self.study_coach.execute(data, coach_trace)
+
+        # Validate
+        val_trace = self._create_trace("validation", data)
+        pipeline.add_trace(val_trace)
+        validation = await self.validator.execute(
+            {"output_type": "study_coach", "content": advice},
+            val_trace,
+        )
+        advice["validation"] = validation
+
+        return advice
 
     async def _handle_auto_route(self, data: dict, pipeline: PipelineTrace) -> dict:
         """

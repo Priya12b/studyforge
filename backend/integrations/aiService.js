@@ -438,6 +438,31 @@ const uploadNoteToAI = async (fileBuffer, filename, mimetype, userId, subject = 
   }
 };
 
+const generateCoachAdvice = async (data) => {
+  try {
+    const payload = {
+      user_id: data.userId || data.user_id || "anonymous",
+      analytics: data.analytics || {},
+      quiz_history: data.quiz_history || [],
+      task_history: data.task_history || [],
+      weak_topics: data.weak_topics || [],
+      model: data.model || null,
+      provider: data.provider || null,
+    };
+    console.log(`\n[AI Coach] Sending to ${AI_BASE}/ai/study-coach`);
+    const response = await aiClient.post("/ai/study-coach", payload);
+    const aiData = response.data;
+    if (!aiData.success) {
+      const errorMsg = aiData.error || "AI study coach failed";
+      throw new Error(errorMsg);
+    }
+    return aiData.data;
+  } catch (error) {
+    console.error("[AI Coach] Error:", error.message);
+    throw error;
+  }
+};
+
 module.exports = {
   generateStudyPlan,
   generateQuiz,
@@ -449,4 +474,5 @@ module.exports = {
   extractTextFromDoc,
   getAIStatus,
   uploadNoteToAI,
+  generateCoachAdvice,
 };

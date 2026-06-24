@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 
 import Layout from "../components/Layout";
@@ -12,6 +12,10 @@ const Chatbot = () => {
   const [sessionId, setSessionId] = useState(null);
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const recognitionRef = useRef(null);
+  const pendingTranscriptRef = useRef("");
+  const finalTranscriptRef = useRef("");
+  const requestInFlightRef = useRef(false);
 
   // Stop reading AI voice responses if user leaves page
   useEffect(() => {
@@ -50,10 +54,41 @@ const Chatbot = () => {
     setIsSpeaking(false);
   };
 
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.onend = null;
+      recognitionRef.current.onresult = null;
+      recognitionRef.current.onerror = null;
+      recognitionRef.current.abort();
+      recognitionRef.current = null;
+    }
+
+    setIsListening(false);
+  };
+
+  const queueTranscriptSend = (transcript) => {
+    const cleanTranscript = transcript.trim();
+    if (!cleanTranscript || requestInFlightRef.current) {
+      return;
+    }
+
+    if (cleanTranscript === pendingTranscriptRef.current) {
+      return;
+    }
+
+    pendingTranscriptRef.current = cleanTranscript;
+    setMessage(cleanTranscript);
+    sendMessageWithText(cleanTranscript);
+  };
+
   const handleVoiceInput = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       toast.error("Speech recognition is not supported in this browser. Try Chrome or Edge.");
+      return;
+    }
+
+    if (requestInFlightRef.current || loading) {
       return;
     }
 
@@ -63,13 +98,17 @@ const Chatbot = () => {
     setIsSpeaking(false);
 
     if (isListening) {
+      stopListening();
       setIsListening(false);
       return;
     }
 
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    finalTranscriptRef.current = "";
     recognition.lang = "en-US";
     recognition.interimResults = false;
+    recognition.continuous = false;
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => {
@@ -78,33 +117,60 @@ const Chatbot = () => {
     };
 
     recognition.onresult = (event) => {
-      const speechToText = event.results[0][0].transcript;
+      if (!speechToText || requestInFlightRef.current || loading) return;
+      const latestResult = event.results[event.results.length - 1];
+      const speechToText = latestResult?.[0]?.transcript?.trim() || "";
+
+      if (!speechToText) {
+        return;
+      }
+
+      finalTranscriptRef.current = speechToText;
       setMessage(speechToText);
-      setIsListening(false);
-      sendMessageWithText(speechToText);
     };
 
     recognition.onerror = (event) => {
       console.error("[Speech Recognition] Error:", event.error);
       setIsListening(false);
+      recognitionRef.current = null;
+      pendingTranscriptRef.current = "";
       toast.error("Speech recognition failed: " + event.error);
     };
 
     recognition.onend = () => {
+      if (!speechToText || requestInFlightRef.current || loading) return;
       setIsListening(false);
+      if (recognitionRef.current === recognition) {
+        recognitionRef.current = null;
+      }
+
+      const transcript = finalTranscriptRef.current.trim();
+      finalTranscriptRef.current = "";
+
+      if (transcript) {
+        queueTranscriptSend(transcript);
+      }
     };
 
     recognition.start();
   };
 
   const sendMessageWithText = async (textToSend) => {
-    if (!textToSend.trim()) return;
+    const trimmedMessage = textToSend.trim();
+    if (!trimmedMessage || requestInFlightRef.current) return;
 
+    requestInFlightRef.current = true;
     setLoading(true);
+
+    if (window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+    setIsSpeaking(false);
+    stopListening();
 
     try {
       const res = await API.post("/chatbot", {
-        message: textToSend,
+        message: trimmedMessage,
         provider: localStorage.getItem("activeProvider") || "gemini",
         model: localStorage.getItem("activeModel") || "google/gemini-2.5-flash",
         session_id: sessionId,
@@ -117,7 +183,7 @@ const Chatbot = () => {
       setChat((currentChat) => [
         ...currentChat,
         {
-          user: textToSend,
+          user: trimmedMessage,
           ai: res.data.reply,
         },
       ]);
@@ -131,14 +197,17 @@ const Chatbot = () => {
       console.error("[Chatbot] Send failed:", error.message);
       toast.error("Failed to send message. Please try again.");
     } finally {
+      requestInFlightRef.current = false;
+      pendingTranscriptRef.current = "";
       setLoading(false);
     }
   };
 
   const sendMessage = () => {
-    sendMessageWithText(message);
+    const trimmed = message.trim();
+    if (!trimmed || requestInFlightRef.current) return;
+    sendMessageWithText(trimmed);
   };
-
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !loading) {
       sendMessage();

@@ -22,6 +22,8 @@ import Chatbot from "./pages/Chatbot";
 import OAuthCallback from "./pages/OAuthCallback";
 import StudyRooms from "./pages/StudyRooms";
 import LiveRoom from "./pages/LiveRoom";
+import Coach from "./pages/Coach";
+import StudyBuddy from "./pages/StudyBuddy";
 
 import { AuthContext } from "./context/AuthContext";
 import ProtectedRoute from "./routes/ProtectedRoute";
@@ -182,6 +184,24 @@ function App() {
           element={
             <ProtectedRoute>
               <LiveRoom />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/coach"
+          element={
+            <ProtectedRoute>
+              <Coach />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/study-buddy"
+          element={
+            <ProtectedRoute>
+              <StudyBuddy />
             </ProtectedRoute>
           }
         />

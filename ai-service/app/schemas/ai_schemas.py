@@ -280,6 +280,7 @@ class IntentType(str, Enum):
     SUMMARIZE = "summarize"
     REVISION_SCHEDULE = "revision_schedule"
     WEAK_ANALYSIS = "weak_analysis"
+    STUDY_COACH = "study_coach"
     GENERAL = "general"
 
 
@@ -289,3 +290,26 @@ class IntentClassification(BaseModel):
     confidence: float = Field(ge=0, le=1)
     extracted_entities: dict = {}
     requires_rag: bool = False
+
+
+# ============================================================
+# Study Coach Schemas
+# ============================================================
+
+class StudyCoachRequest(BaseModel):
+    """Request to generate study coach advice."""
+    user_id: str
+    analytics: Optional[dict] = None
+    quiz_history: List[dict] = []
+    task_history: List[dict] = []
+    weak_topics: List[str] = []
+    model: Optional[str] = None
+    provider: Optional[str] = None
+
+
+class StudyCoachResponse(BaseModel):
+    """AI study coach advice response."""
+    coach_message: str
+    priority_actions: List[str]
+    study_tip: str
+

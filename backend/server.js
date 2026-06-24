@@ -49,6 +49,8 @@ const chatbotRoutes = require("./routes/chatbotRoutes");
 const flashcardRoutes = require("./routes/flashcardRoutes");
 const revisionRoutes = require("./routes/revisionRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const coachRoutes = require("./routes/coachRoutes");
+const studyBuddyRoutes = require("./routes/studyBuddyRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/planner", plannerRoutes);
@@ -64,6 +66,8 @@ app.use("/api/chatbot", chatbotRoutes);
 app.use("/api/flashcards", flashcardRoutes);
 app.use("/api/revision", revisionRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/coach", coachRoutes);
+app.use("/api/study-buddy", studyBuddyRoutes);
 app.use("/uploads", express.static("uploads"));
 
 const protect = require("./middleware/authMiddleware");

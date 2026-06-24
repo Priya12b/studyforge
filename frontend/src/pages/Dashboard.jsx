@@ -94,6 +94,18 @@ const Dashboard = () => {
             <h3>Ask study questions</h3>
             <p className="muted">Get quick AI-guided study replies from your main app.</p>
           </Link>
+
+          <Link to="/coach" className="card">
+            <div className="stat-label">AI Study Coach</div>
+            <h3>Coaching Recommendations</h3>
+            <p className="muted">Personalized advice based on quizzes, tasks & weak topics.</p>
+          </Link>
+
+          <Link to="/study-buddy" className="card">
+            <div className="stat-label">Study Buddy</div>
+            <h3>Find Study Buddies</h3>
+            <p className="muted">Match with students by availability, subjects & skill levels.</p>
+          </Link>
         </div>
 
         {loading && <LoadingSpinner message="Loading dashboard data..." />}

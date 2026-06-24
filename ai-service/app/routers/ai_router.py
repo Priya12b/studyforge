@@ -22,6 +22,7 @@ from app.schemas.ai_schemas import (
     DocumentQueryRequest,
     WeakTopicAnalysisRequest,
     ProductivityAnalysisRequest,
+    StudyCoachRequest,
 )
 from app.utils.logging import get_logger
 from app.rag.document_processor import document_processor
@@ -387,6 +388,25 @@ async def analyze_weak_topics(request: WeakTopicAnalysisRequest):
 
     if not result["success"]:
         raise HTTPException(status_code=500, detail=result.get("error", "Weak analysis failed"))
+
+    return result
+
+
+# ============================================================
+# Study Coach Endpoint
+# ============================================================
+
+@router.post("/study-coach")
+async def generate_study_coach(request: StudyCoachRequest):
+    """Generate study coaching assessment and recommendations."""
+    result = await orchestrator.process_request(
+        request_type="study_coach",
+        data=request.model_dump(),
+        user_id=request.user_id,
+    )
+
+    if not result["success"]:
+        raise HTTPException(status_code=500, detail=result.get("error", "Study coach generation failed"))
 
     return result
 
