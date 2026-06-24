@@ -3,6 +3,10 @@ const cors = require("cors");
 
 const app = express();
 
+// Trust the first reverse-proxy hop (required on Render / Vercel / any cloud platform)
+// Without this, express-rate-limit throws ERR_ERL_UNEXPECTED_X_FORWARDED_FOR
+app.set("trust proxy", 1);
+
 const rateLimit = require("express-rate-limit");
 
 require("dotenv").config();

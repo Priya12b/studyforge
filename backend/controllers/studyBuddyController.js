@@ -58,7 +58,7 @@ const updateProfile = async (req, res) => {
     const user = await User.findByIdAndUpdate(
       req.user.id,
       { $set: updateFields },
-      { new: true, runValidators: true }
+      { returnDocument: "after", runValidators: true }
     ).select("name email subjects topicsNeeded topicsStrong availability skillLevel isMatchingEnabled");
 
     if (!user) {
