@@ -1,41 +1,29 @@
 /**
- * Email Service — Nodemailer + Gmail SMTP
- * Handles Study Buddy invitation emails.
+ * Email Service — Brevo (formerly Sendinblue) Transactional Email API
+ *
+ * Why not SMTP (Nodemailer/Gmail)?
+ *   Render's network blocks outbound SMTP (ports 465, 587, 25) causing
+ *   "Connection timeout" errors that cannot be fixed by changing ports.
+ *
+ * Brevo sends via HTTPS — never blocked by any cloud host.
+ * Free tier: 300 emails / day, no credit card required.
+ * Sign up: https://app.brevo.com/
  */
 
-const nodemailer = require("nodemailer");
+const axios = require("axios");
 
-// Create a reusable transporter instance
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    // Port 465 (SMTPS) is blocked by Render's firewall.
-    // Use port 587 with STARTTLS — this is what Render allows for outbound SMTP.
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,            // false = STARTTLS upgrade (not immediate TLS)
-    requireTLS: true,         // enforce TLS upgrade; fail if server doesn't support it
-    family: 4,                // force IPv4 — Render blocks IPv6 outbound
-    auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD,
-    },
-    // Prevent silent hangs on cloud platforms (Render, Railway, etc.)
-    connectionTimeout: 10000,  // 10 s to connect
-    greetingTimeout: 5000,     // 5 s for SMTP greeting
-    socketTimeout: 15000,      // 15 s for each send operation
-  });
-};
+const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
 
 /**
- * Send a Study Buddy invitation email.
+ * Send a Study Buddy invitation email via Brevo's transactional API.
  * @param {Object} opts
- * @param {string} opts.senderName   - Name of the student sending the invite
- * @param {string} opts.senderEmail  - Email of the sender (shown in body)
- * @param {string} opts.recipientEmail - Email of the buddy to invite
- * @param {string} opts.recipientName  - Name of the buddy
+ * @param {string} opts.senderName      - Name of the student sending the invite
+ * @param {string} opts.senderEmail     - Email of the sender (shown in body)
+ * @param {string} opts.recipientEmail  - Email of the buddy to invite
+ * @param {string} opts.recipientName   - Name of the buddy
  * @param {string[]} opts.sharedSubjects - Subjects both students share
  * @param {string[]} opts.senderStrong  - Topics sender is strong in (can teach buddy)
- * @param {number}  opts.matchScore    - Compatibility percentage
+ * @param {number}  opts.matchScore     - Compatibility percentage
  */
 const sendBuddyInvitation = async ({
   senderName,
@@ -46,7 +34,12 @@ const sendBuddyInvitation = async ({
   senderStrong = [],
   matchScore = 0,
 }) => {
-  const transporter = createTransporter();
+  const apiKey = process.env.BREVO_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "BREVO_API_KEY is not set. Add it to your environment variables."
+    );
+  }
 
   const sharedSubjectsText =
     sharedSubjects.length > 0
@@ -160,17 +153,32 @@ const sendBuddyInvitation = async ({
 </html>
 `;
 
-  const mailOptions = {
-    from: `"StudyForge — ${senderName}" <${process.env.GMAIL_USER}>`,
-    to: recipientEmail,
+  const payload = {
+    sender: {
+      // Must match the verified sender domain/email in your Brevo account.
+      // Using BREVO_SENDER_EMAIL avoids domain verification headaches.
+      name: "StudyForge",
+      email: process.env.BREVO_SENDER_EMAIL || process.env.GMAIL_USER,
+    },
+    to: [{ email: recipientEmail, name: recipientName }],
+    replyTo: { email: senderEmail, name: senderName },
     subject: `🤝 ${senderName} wants to be your Study Buddy on StudyForge!`,
-    html,
-    replyTo: senderEmail,
+    htmlContent: html,
   };
 
-  const info = await transporter.sendMail(mailOptions);
-  console.log(`[EmailService] Buddy invitation sent to ${recipientEmail}: ${info.messageId}`);
-  return info;
+  const response = await axios.post(BREVO_API_URL, payload, {
+    headers: {
+      "api-key": apiKey,
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    },
+    timeout: 15000,
+  });
+
+  console.log(
+    `[EmailService] Buddy invitation sent to ${recipientEmail} via Brevo. MessageId: ${response.data?.messageId}`
+  );
+  return response.data;
 };
 
 module.exports = { sendBuddyInvitation };
