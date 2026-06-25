@@ -8,13 +8,13 @@ const nodemailer = require("nodemailer");
 // Create a reusable transporter instance
 const createTransporter = () => {
   return nodemailer.createTransport({
-    // Use explicit host/port instead of `service: "gmail"` so we can
-    // force IPv4 — Render's free tier blocks IPv6 outbound connections,
-    // causing ENETUNREACH when Gmail's SMTP resolves to an IPv6 address.
+    // Port 465 (SMTPS) is blocked by Render's firewall.
+    // Use port 587 with STARTTLS — this is what Render allows for outbound SMTP.
     host: "smtp.gmail.com",
-    port: 465,
-    secure: true,             // TLS on port 465
-    family: 4,                // ← force IPv4 (critical for Render)
+    port: 587,
+    secure: false,            // false = STARTTLS upgrade (not immediate TLS)
+    requireTLS: true,         // enforce TLS upgrade; fail if server doesn't support it
+    family: 4,                // force IPv4 — Render blocks IPv6 outbound
     auth: {
       user: process.env.GMAIL_USER,
       pass: process.env.GMAIL_APP_PASSWORD,
