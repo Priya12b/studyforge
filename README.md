@@ -11,16 +11,16 @@ Three services run concurrently and communicate over HTTP and WebSockets:
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │           React Frontend  (Vite · Port 5173)                │
-│  React 19 · React Router 7 · Recharts · Socket.IO-Client   │
+│  React 19 · React Router 7 · Recharts · Socket.IO-Client    │
 └──────────────────────┬──────────────────────────────────────┘
                        │ REST + WebSocket
 ┌──────────────────────▼──────────────────────────────────────┐
 │        Express Backend  (Node.js · Port 5000)               │
-│  Auth · CRUD · Cloudinary · Socket.IO · Web Push · Brevo   │
+│  Auth · CRUD · Cloudinary · Socket.IO · Web Push · Brevo    │
 └───────────┬────────────────────────────────┬────────────────┘
             │ Mongoose                        │ axios
      ┌──────▼──────┐               ┌──────────▼──────────────┐
-     │   MongoDB   │               │  FastAPI AI Service      │
+     │   MongoDB   │               │  FastAPI AI Service     │
      │  (local /   │               │  (Python · Port 8000)   │
      │   Atlas)    │               │  LangChain · LangGraph  │
      └─────────────┘               │  ChromaDB · Gemini      │
